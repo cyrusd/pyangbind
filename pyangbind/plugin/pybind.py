@@ -398,6 +398,9 @@ def build_pybind(ctx, modules, fd):
 
 def build_identities(ctx, defnd):
   def find_all_identity_values(item, definitions, values=list()):
+    if not item in definitions:
+      return values
+
     new_values = [k for k in definitions[item] if k not
                     in ["@module", "@namespace"] and k not in values]
     for v in new_values:
@@ -441,6 +444,7 @@ def build_identities(ctx, defnd):
           prefix, value = unicode(prefix), unicode(value)
           if value not in identity_d[base_id]:
             identity_d[base_id][value] = defn_content
+            identity_d[base_id]["%s:%s" % (module, value)] = defn_content
           if value not in identity_d:
             identity_d[value] = {}
           # check whether the base existed with the prefix that was
@@ -453,8 +457,11 @@ def build_identities(ctx, defnd):
             else:
               identity_d[resolved_base][ident] = defn_content
               identity_d[resolved_base][value] = defn_content
+              identity_d[resolved_base]["%s:%s" % (module, value)] = defn_content
         if ident not in identity_d[base_id]:
           identity_d[base_id][ident] = defn_content
+          if not ":" in ident:
+            identity_d[base_id]["%s:%s" % (module, ident)] = defn_content
         if ident not in identity_d:
           identity_d[ident] = defn_content
       else:
@@ -488,7 +495,7 @@ def build_identities(ctx, defnd):
   for identity in orig_identity_d:
     vals = find_all_identity_values(identity, orig_identity_d, values=[])
     for value in vals:
-      if value not in orig_identity_d[identity]:
+      if value not in orig_identity_d[identity] and value in orig_identity_d:
         identity_d[identity][value] = {k: v for k, v in
             orig_identity_d[value].iteritems() if k in
             ["@module", "@namespace"]}
